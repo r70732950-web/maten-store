@@ -87,7 +87,6 @@
         .notification.success { background-color: var(--accent-color); }
         .notification.error { background-color: var(--danger-color); }
         
-        /* دوگمەکانی ئەدمین */
         .admin-controls { display: none; position: fixed; bottom: 20px; right: 20px; flex-direction: column; gap: 15px; z-index: 80; }
         .action-fab { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .add-cat-btn { background-color: var(--primary-color); }
@@ -109,7 +108,6 @@
             </div>
         </header>
 
-        <!-- مۆدێلی سکانەری بارکۆد -->
         <div id="scannerModal" class="modal">
             <div class="modal-content">
                 <span class="close" id="closeScanner">&times;</span>
@@ -119,15 +117,14 @@
             </div>
         </div>
 
-        <!-- مۆدێلی چوونەژوورەوە -->
         <div id="loginModal" class="modal">
             <div class="modal-content">
                 <span class="close" id="closeLogin">&times;</span>
                 <h2 style="text-align: center; margin-bottom: 18px;">چوونەژوورەوەی بەڕێوەبەر</h2>
                 <form id="loginForm">
                     <div class="form-group">
-                        <label for="username">ناوی بەکارهێنەر:</label>
-                        <input type="text" id="username" required>
+                        <label for="email">ئیمەیل:</label>
+                        <input type="email" id="email" required>
                     </div>
                     <div class="form-group">
                         <label for="password">وشەی نهێنی:</label>
@@ -158,7 +155,6 @@
             </div>
         </main>
         
-        <!-- دوگمەکانی تایبەت بە ئەدمین -->
         <div class="admin-controls" id="adminControls">
             <div class="action-fab add-cat-btn" id="addCategoryBtn" title="زیادکردنی جۆر">
                 <i class="fas fa-folder-plus"></i>
@@ -168,7 +164,6 @@
             </div>
         </div>
 
-        <!-- مۆدێلی زیادکردنی جۆر (Category) -->
         <div id="categoryFormModal" class="modal">
             <div class="modal-content">
                 <span class="close" id="closeCategoryForm">&times;</span>
@@ -183,7 +178,6 @@
             </div>
         </div>
 
-        <!-- مۆدێلی زیادکردنی کاڵا (Product) -->
         <div id="productFormModal" class="modal">
             <div class="modal-content">
                 <span class="close" id="closeForm">&times;</span>
@@ -221,8 +215,8 @@
     <script type="module"> 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
 
-        // زانیارییە نوێیەکانی فایەربەیسەکەی تۆ
         const firebaseConfig = {
             apiKey: "AIzaSyDhM1385HOvqcJhyVilnRxkoChy-43iRQc",
             authDomain: "maten-a2460.firebaseapp.com",
@@ -235,11 +229,11 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
         
         const productsCollection = collection(db, "products");
         const categoriesCollection = collection(db, "categories");
 
-        const ADMIN_USER = { username: "maten", password: "maten411" };
         let products = [];
         let categories = [];
         let isAdmin = false;
@@ -336,7 +330,6 @@
         function renderProducts() {
             productsContainer.innerHTML = '';
             
-            // ١. فلتەرکردنی کاڵاکان بەپێی گەڕان و جۆر
             const filteredProducts = products.filter(product => {
                 const matchesCategory = currentCategory === 'all' || product.category === currentCategory;
                 const searchLower = currentSearch.toLowerCase();
@@ -345,7 +338,6 @@
                 return matchesCategory && matchesSearch;
             });
             
-            // ٢. ڕیزکردنی کاڵاکان بەپێی کاتی زیادکردن/گۆڕانکاری (نوێترینەکان بۆ سەرەوە)
             filteredProducts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
             if (filteredProducts.length === 0) {
@@ -448,14 +440,13 @@
         function setupEventListeners() {
             adminLoginBtn.addEventListener('click', () => { loginModal.style.display = 'block'; });
             
-            logoutBtn.addEventListener('click', () => {
-                isAdmin = false;
-                logoutBtn.style.display = 'none';
-                adminLoginBtn.style.display = 'block';
-                adminControls.style.display = 'none';
-                renderCategories();
-                renderProducts();
-                showNotification('بە سەرکەوتوویی چوویتەدەرەوە', 'success');
+            logoutBtn.addEventListener('click', async () => {
+                try {
+                    await signOut(auth);
+                    showNotification('بە سەرکەوتوویی چوویتەدەرەوە', 'success');
+                } catch (error) {
+                    showNotification('هەڵەیەک ڕوویدا لە چوونەدەرەوە', 'error');
+                }
             });
             
             addProductBtn.addEventListener('click', () => {
@@ -486,22 +477,18 @@
             
             scanBtn.addEventListener('click', startScanner);
             
-            loginForm.addEventListener('submit', (e) => {
+            loginForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const username = document.getElementById('username').value;
+                const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 
-                if (username === ADMIN_USER.username && password === ADMIN_USER.password) {
-                    isAdmin = true;
+                try {
+                    await signInWithEmailAndPassword(auth, email, password);
                     loginModal.style.display = 'none';
-                    logoutBtn.style.display = 'block';
-                    adminLoginBtn.style.display = 'none';
-                    adminControls.style.display = 'flex';
-                    renderCategories();
-                    renderProducts();
+                    loginForm.reset();
                     showNotification('بە سەرکەوتوویی چوویتەژوورەوە', 'success');
-                } else {
-                    showNotification('ناوی بەکارهێنەر یان وشەی نهێنی هەڵەە', 'error');
+                } catch (error) {
+                    showNotification('ئیمەیل یان وشەی نهێنی هەڵەیە', 'error');
                 }
             });
 
@@ -531,7 +518,7 @@
                     price: parseFloat(document.getElementById('productPrice').value),
                     category: document.getElementById('productCategory').value,
                     image: imageUrl || 'https://placehold.co/300x300/e2e8f0/2d3748?text=Product',
-                    timestamp: Date.now() // زیادکردنی کاتی ئێستا بۆ ئەوەی بێتە سەرەوە
+                    timestamp: Date.now()
                 };
                 
                 try {
@@ -568,6 +555,23 @@
         }
 
         function init() {
+            // چاودێریکردنی دۆخی چوونەژوورەوەی ئەدمین
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    isAdmin = true;
+                    logoutBtn.style.display = 'block';
+                    adminLoginBtn.style.display = 'none';
+                    adminControls.style.display = 'flex';
+                } else {
+                    isAdmin = false;
+                    logoutBtn.style.display = 'none';
+                    adminLoginBtn.style.display = 'block';
+                    adminControls.style.display = 'none';
+                }
+                renderCategories();
+                renderProducts();
+            });
+
             onSnapshot(categoriesCollection, (snapshot) => {
                 categories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderCategories();
