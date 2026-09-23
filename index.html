@@ -149,7 +149,6 @@
             <div class="section">
                 <h3 class="section-title"><i class="fas fa-list"></i> جۆرەکان</h3>
                 <div class="categories" id="categoriesContainer" style="padding-bottom: 10px;">
-                    <!-- جۆرەکان لێرە بە داینامیکی دروست دەبن -->
                     <button class="category-btn active" data-category="all"><i class="fas fa-th"></i> هەمی</button>
                 </div>
             </div>
@@ -205,7 +204,6 @@
                         <label for="productCategory">جۆر:</label>
                         <select id="productCategory" required>
                             <option value="" disabled selected>-- جۆرێک هەڵبژێرە --</option>
-                            <!-- هەڵبژاردنەکان لە فایەربەیسەوە دێن -->
                         </select>
                     </div>
                     
@@ -338,6 +336,7 @@
         function renderProducts() {
             productsContainer.innerHTML = '';
             
+            // ١. فلتەرکردنی کاڵاکان بەپێی گەڕان و جۆر
             const filteredProducts = products.filter(product => {
                 const matchesCategory = currentCategory === 'all' || product.category === currentCategory;
                 const searchLower = currentSearch.toLowerCase();
@@ -346,6 +345,9 @@
                 return matchesCategory && matchesSearch;
             });
             
+            // ٢. ڕیزکردنی کاڵاکان بەپێی کاتی زیادکردن/گۆڕانکاری (نوێترینەکان بۆ سەرەوە)
+            filteredProducts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
             if (filteredProducts.length === 0) {
                 productsContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 20px; color: var(--dark-gray);">هیچ کاڵایەک نەدۆزرایەوە</div>';
                 return;
@@ -356,8 +358,6 @@
                 productCard.className = 'product-card';
                 
                 const codeDisplay = product.code ? `<div class="product-code-display"><i class="fas fa-barcode"></i> ${product.code}</div>` : '';
-                
-                // گۆڕینی فۆرماتی نرخ بۆ دینار بە فاریزەوە (نموونە: 15,000 دینار)
                 const formattedPrice = parseFloat(product.price).toLocaleString('en-US');
 
                 productCard.innerHTML = `
@@ -530,7 +530,8 @@
                     name: document.getElementById('productName').value,
                     price: parseFloat(document.getElementById('productPrice').value),
                     category: document.getElementById('productCategory').value,
-                    image: imageUrl || 'https://placehold.co/300x300/e2e8f0/2d3748?text=Product'
+                    image: imageUrl || 'https://placehold.co/300x300/e2e8f0/2d3748?text=Product',
+                    timestamp: Date.now() // زیادکردنی کاتی ئێستا بۆ ئەوەی بێتە سەرەوە
                 };
                 
                 try {
@@ -584,9 +585,3 @@
     </script>
 </body>
 </html>
-```<FollowUp label="هەنگاوی داهاتوو چییە؟" query="ئایا هیچ شتێکی تر ماوە کە بتەوێت لەم کۆدەدا بیگۆڕم، یان دەتەوێت فێربیت چۆن بە تەواوی ئیشی پێبکەیت؟"/>
-
-<ElicitationsGroup message="بژاردەی تر کە لەوانەیە پێویستت پێی بێت:">
-  <Elicitation label="گۆڕینی وشەی نهێنی" query="چۆن بتوانم ناوی بەکارهێنەر و وشەی نهێنی بگۆڕم بۆ ئەوەی کەسی تر نەتوانێت بێتە ژوورەوە؟"/>
-  <Elicitation label="ماڵپەڕ بۆ لینککردنی وێنە" query="دەتوانیت ماڵپەڕێکم پێ بڵێیت کە بە خۆڕایی وێنەکانی تێدا بەرز بکەمەوە بۆ ئەوەی لینکەکانیان بەکاربهێنم؟"/>
-</ElicitationsGroup>
