@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maten Store - نرخی کاڵاکان</title>
+    <meta http-equiv="Content-Language" content="ku">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        @font-face {
+            font-family: 'NRT';
+            src: url('https://www.nrttv.com/css/fonts/NRT-Reg.woff2') format('woff2'),
+                 url('https://www.nrttv.com/css/fonts/NRT-Reg.woff') format('woff');
+            font-weight: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'NRT';
+            src: url('https://www.nrttv.com/css/fonts/NRT-Bold.woff2') format('woff2'),
+                 url('https://www.nrttv.com/css/fonts/NRT-Bold.woff') format('woff');
+            font-weight: bold;
+            font-display: swap;
+        }
+        :root {
+            --primary-color: #1a365d;
+            --primary-light: #2a4365;
+            --accent-color: #2f855a;
+            --accent-light: #38a169;
+            --danger-color: #c53030;
+            --text-color: #2d3748;
+            --text-light: #4a5568;
+            --light-gray: #edf2f7;
+            --medium-gray: #e2e8f0;
+            --dark-gray: #718096;
+            --section-bg: #ffffff;
+            --section-border: #cbd5e0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'NRT', sans-serif; }
+        body { background-color: var(--light-gray); color: var(--text-color); direction: rtl; transition: background-color 0.3s; }
+        .app-container { max-width: 100%; margin: 0 auto; background-color: white; min-height: 100vh; position: relative; }
+        .app-header { background-color: white; color: var(--primary-color); padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); border-bottom: 2px solid var(--accent-color); }
+        .logo { display: flex; align-items: center; gap: 10px; }
+        .logo-bottom { font-size: 22px; font-weight: bold; color: var(--primary-color); }
+        .user-actions { display: flex; align-items: center; gap: 15px; }
+        .user-actions button { color: var(--primary-color); background: none; border: none; font-size: 18px; cursor: pointer; }
+        .main-content { padding-bottom: 90px; }
+        .section { background-color: var(--section-bg); border-radius: 8px; margin: 12px; padding: 12px; border: 1px solid var(--section-border); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
+        .section-title { font-size: 17px; margin-bottom: 12px; color: var(--primary-color); display: flex; align-items: center; gap: 8px; font-weight: bold; }
+        
+        .categories { display: flex; overflow-x: auto; padding: 8px 0; gap: 8px; scrollbar-width: none; }
+        .categories::-webkit-scrollbar { display: none; }
+        .category-btn { background-color: var(--light-gray); border: none; padding: 6px 12px; border-radius: 18px; white-space: nowrap; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 4px; border: 1px solid var(--section-border); }
+        .category-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); font-weight: bold; }
+        .delete-cat { margin-right: 8px; color: var(--danger-color); cursor: pointer; padding: 2px; }
+        
+        .search-container { margin: 12px; display: flex; gap: 8px; }
+        .search-input-wrapper { position: relative; flex: 1; }
+        .search-input { width: 100%; padding: 10px 40px 10px 12px; border: 1px solid var(--section-border); border-radius: 6px; font-size: 15px; }
+        .search-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--dark-gray); }
+        .scan-btn { background-color: var(--primary-color); color: white; border: none; border-radius: 6px; padding: 0 15px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+        
+        .products-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+        .product-card { background-color: white; border-radius: 8px; overflow: hidden; position: relative; border: 1px solid var(--section-border); transition: transform 0.2s, box-shadow 0.2s; }
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1); }
+        .product-image-container { width: 100%; aspect-ratio: 1/1; position: relative; background-color: var(--light-gray); }
+        .product-image { width: 100%; height: 100%; object-fit: contain; padding: 10px; }
+        .product-info { padding: 8px; text-align: center; }
+        .product-name { font-weight: bold; font-size: 14px; }
+        .product-code-display { font-size: 11px; color: var(--dark-gray); margin-top: 4px; background: var(--light-gray); padding: 2px 5px; border-radius: 4px; display: inline-block; }
+        .product-price { color: var(--accent-light); font-weight: 700; font-size: 15px; margin-top: 4px; }
+        .product-actions { position: absolute; top: 5px; left: 5px; display: none; gap: 5px; flex-direction: column; }
+        .product-card:hover .product-actions { display: flex; }
+        .edit-btn, .delete-btn { width: 28px; height: 28px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; font-size: 13px; color: white; cursor: pointer; }
+        .edit-btn { background-color: var(--accent-color); }
+        .delete-btn { background-color: var(--danger-color); }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 200; overflow-y: auto; }
+        .modal-content { background-color: white; margin: 30px auto; padding: 20px; border-radius: 8px; width: 90%; max-width: 450px; position: relative; }
+        .close { position: absolute; top: 12px; left: 12px; font-size: 22px; cursor: pointer; z-index: 10; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid var(--section-border); border-radius: 6px; }
+        button[type="submit"] { background-color: var(--accent-color); color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; }
+        .notification { position: fixed; top: 15px; right: 15px; padding: 12px 16px; border-radius: 6px; color: white; z-index: 300; opacity: 0; transform: translateX(100%); transition: all 0.3s; }
+        .notification.show { opacity: 1; transform: translateX(0); }
+        .notification.success { background-color: var(--accent-color); }
+        .notification.error { background-color: var(--danger-color); }
+        
+        /* دوگمەکانی ئەدمین */
+        .admin-controls { display: none; position: fixed; bottom: 20px; right: 20px; flex-direction: column; gap: 15px; z-index: 80; }
+        .action-fab { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .add-cat-btn { background-color: var(--primary-color); }
+        .add-prod-btn { background-color: var(--accent-color); }
+        
+        #reader { width: 100%; min-height: 250px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="logo">
+                <i class="fas fa-store" style="color: var(--accent-color); font-size: 24px;"></i>
+                <span class="logo-bottom">فرۆشگای MATEN</span>
+            </div>
+            <div class="user-actions">
+                <button id="adminLoginBtn" title="چوونەژوورەوەی بەڕێوەبەر"><i class="fas fa-user-shield"></i></button>
+                <button id="logoutBtn" style="display: none;" title="چوونەدەرەوە"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </header>
+
+        <!-- مۆدێلی سکانەری بارکۆد -->
+        <div id="scannerModal" class="modal">
+            <div class="modal-content">
+                <span class="close" id="closeScanner">&times;</span>
+                <h2 style="text-align: center; margin-bottom: 10px;"><i class="fas fa-camera"></i> سکانی بارکۆد</h2>
+                <div id="reader"></div>
+                <p style="text-align: center; font-size: 13px; margin-top: 10px; color: var(--dark-gray);">کامێرا ڕووبەڕووی بارکۆدەکە بکەوە</p>
+            </div>
+        </div>
+
+        <!-- مۆدێلی چوونەژوورەوە -->
+        <div id="loginModal" class="modal">
+            <div class="modal-content">
+                <span class="close" id="closeLogin">&times;</span>
+                <h2 style="text-align: center; margin-bottom: 18px;">چوونەژوورەوەی بەڕێوەبەر</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="username">ناوی بەکارهێنەر:</label>
+                        <input type="text" id="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">وشەی نهێنی:</label>
+                        <input type="password" id="password" required>
+                    </div>
+                    <button type="submit">چوونەژوورەوە</button>
+                </form>
+            </div>
+        </div>
+
+        <main class="main-content">
+             <div class="search-container">
+                <div class="search-input-wrapper">
+                    <input type="text" id="searchInput" class="search-input" placeholder="گەڕان بە ناو یان کۆدی کاڵا...">
+                    <i class="fas fa-search search-icon"></i>
+                </div>
+                <button id="scanBtn" class="scan-btn" title="سکان بە کامێرا"><i class="fas fa-qrcode"></i></button>
+            </div>
+            <div class="section">
+                <h3 class="section-title"><i class="fas fa-list"></i> جۆرەکان</h3>
+                <div class="categories" id="categoriesContainer" style="padding-bottom: 10px;">
+                    <!-- جۆرەکان لێرە بە داینامیکی دروست دەبن -->
+                    <button class="category-btn active" data-category="all"><i class="fas fa-th"></i> هەمی</button>
+                </div>
+            </div>
+            <div class="section">
+                <h3 class="section-title"><i class="fas fa-box-open"></i> کاڵاکان</h3>
+                <div class="products-container" id="productsContainer"></div>
+            </div>
+        </main>
+        
+        <!-- دوگمەکانی تایبەت بە ئەدمین -->
+        <div class="admin-controls" id="adminControls">
+            <div class="action-fab add-cat-btn" id="addCategoryBtn" title="زیادکردنی جۆر">
+                <i class="fas fa-folder-plus"></i>
+            </div>
+            <div class="action-fab add-prod-btn" id="addProductBtn" title="زیادکردنی کاڵا">
+                <i class="fas fa-plus"></i>
+            </div>
+        </div>
+
+        <!-- مۆدێلی زیادکردنی جۆر (Category) -->
+        <div id="categoryFormModal" class="modal">
+            <div class="modal-content">
+                <span class="close" id="closeCategoryForm">&times;</span>
+                <h2 style="text-align: center; margin-bottom: 18px;">زیادکردنی جۆری نوێ</h2>
+                <form id="categoryForm">
+                    <div class="form-group">
+                        <label for="categoryName">ناوی جۆر:</label>
+                        <input type="text" id="categoryName" required placeholder="بۆ نموونە: ئەلیکترۆنیات">
+                    </div>
+                    <button type="submit">پاشەکەوتکردن</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- مۆدێلی زیادکردنی کاڵا (Product) -->
+        <div id="productFormModal" class="modal">
+            <div class="modal-content">
+                <span class="close" id="closeForm">&times;</span>
+                <h2 id="formTitle" style="text-align: center; margin-bottom: 18px;">زیادکردنی کاڵای نوێ</h2>
+                <form id="productForm">
+                    <div class="form-group">
+                        <label for="productCode">کۆدی کاڵا (بارکۆد):</label>
+                        <input type="text" id="productCode" required placeholder="بۆ نموونە: 123456789">
+                    </div>
+                    <div class="form-group"><label for="productName">ناوی کاڵا:</label><input type="text" id="productName" required></div>
+                    
+                    <div class="form-group">
+                        <label for="productPrice">نرخ ($):</label>
+                        <input type="number" id="productPrice" required min="0" step="0.01">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="productCategory">جۆر:</label>
+                        <select id="productCategory" required>
+                            <option value="" disabled selected>-- جۆرێک هەڵبژێرە --</option>
+                            <!-- هەڵبژاردنەکان لە فایەربەیسەوە دێن -->
+                        </select>
+                    </div>
+                    
+                    <!-- گۆڕانکاری لێرە کرا: خانەیەک بۆ لینکی وێنە -->
+                    <div class="form-group">
+                        <label for="productImage">لینکی وێنەی کاڵا:</label>
+                        <input type="url" id="productImage" required placeholder="لینکی وێنەکە لێرە دابنێ (http://...)">
+                        <div id="imagePreview" style="margin-top: 8px; border:1px dashed #ccc; padding:10px; text-align:center;">پێشبینی وێنە</div>
+                    </div>
+                    <button type="submit">پاشەکەوتکردن</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module"> 
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        // زانیارییە نوێیەکانی فایەربەیسەکەی تۆ
+        const firebaseConfig = {
+            apiKey: "AIzaSyDhM1385HOvqcJhyVilnRxkoChy-43iRQc",
+            authDomain: "maten-a2460.firebaseapp.com",
+            projectId: "maten-a2460",
+            storageBucket: "maten-a2460.firebasestorage.app",
+            messagingSenderId: "851227707218",
+            appId: "1:851227707218:web:cb27b97eb1bc91b4429c8b",
+            measurementId: "G-5FVWYB7EN8"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        const productsCollection = collection(db, "products");
+        const categoriesCollection = collection(db, "categories");
+
+        const ADMIN_USER = { username: "maten", password: "maten411" };
+        let products = [];
+        let categories = [];
+        let isAdmin = false;
+        let editingProductId = null;
+        let currentCategory = 'all';
+        let currentSearch = '';
+        let html5QrcodeScanner = null;
+
+        const adminLoginBtn = document.getElementById('adminLoginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const loginModal = document.getElementById('loginModal');
+        const adminControls = document.getElementById('adminControls');
+        const addProductBtn = document.getElementById('addProductBtn');
+        const addCategoryBtn = document.getElementById('addCategoryBtn');
+        const productFormModal = document.getElementById('productFormModal');
+        const categoryFormModal = document.getElementById('categoryFormModal');
+        const scannerModal = document.getElementById('scannerModal');
+        const productsContainer = document.getElementById('productsContainer');
+        const categoriesContainer = document.getElementById('categoriesContainer');
+        const productCategorySelect = document.getElementById('productCategory');
+        const searchInput = document.getElementById('searchInput');
+        const scanBtn = document.getElementById('scanBtn');
+        
+        const loginForm = document.getElementById('loginForm');
+        const productForm = document.getElementById('productForm');
+        const categoryForm = document.getElementById('categoryForm');
+        const formTitle = document.getElementById('formTitle');
+        const productImage = document.getElementById('productImage');
+        const imagePreview = document.getElementById('imagePreview');
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => { notification.classList.add('show'); }, 10);
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => { document.body.removeChild(notification); }, 300);
+            }, 3000);
+        }
+
+        function renderCategories() {
+            categoriesContainer.innerHTML = `<button class="category-btn ${currentCategory === 'all' ? 'active' : ''}" data-category="all"><i class="fas fa-th"></i> هەمی</button>`;
+            productCategorySelect.innerHTML = `<option value="" disabled selected>-- جۆرێک هەڵبژێرە --</option>`;
+
+            categories.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = `category-btn ${currentCategory === cat.name ? 'active' : ''}`;
+                btn.setAttribute('data-category', cat.name);
+                
+                if (isAdmin) {
+                    btn.innerHTML = `${cat.name} <i class="fas fa-times delete-cat" data-id="${cat.id}"></i>`;
+                } else {
+                    btn.textContent = cat.name;
+                }
+                
+                categoriesContainer.appendChild(btn);
+
+                const option = document.createElement('option');
+                option.value = cat.name;
+                option.textContent = cat.name;
+                productCategorySelect.appendChild(option);
+            });
+
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('delete-cat')) return;
+                    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentCategory = btn.getAttribute('data-category');
+                    renderProducts();
+                });
+            });
+
+            if (isAdmin) {
+                document.querySelectorAll('.delete-cat').forEach(icon => {
+                    icon.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        const catId = e.target.getAttribute('data-id');
+                        if (confirm('دڵنیایت دەتەوێت ئەم جۆرە بە تەواوەتی بسڕیتەوە؟')) {
+                            await deleteDoc(doc(db, "categories", catId));
+                            showNotification('جۆر سڕدرایەوە', 'success');
+                            const deletedCat = categories.find(c => c.id === catId);
+                            if (deletedCat && currentCategory === deletedCat.name) {
+                                currentCategory = 'all';
+                            }
+                        }
+                    });
+                });
+            }
+        }
+
+        function renderProducts() {
+            productsContainer.innerHTML = '';
+            
+            const filteredProducts = products.filter(product => {
+                const matchesCategory = currentCategory === 'all' || product.category === currentCategory;
+                const searchLower = currentSearch.toLowerCase();
+                const matchesSearch = product.name.toLowerCase().includes(searchLower) || 
+                                      (product.code && product.code.toLowerCase().includes(searchLower));
+                return matchesCategory && matchesSearch;
+            });
+            
+            if (filteredProducts.length === 0) {
+                productsContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 20px; color: var(--dark-gray);">هیچ کاڵایەک نەدۆزرایەوە</div>';
+                return;
+            }
+            
+            filteredProducts.forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.className = 'product-card';
+                
+                const codeDisplay = product.code ? `<div class="product-code-display"><i class="fas fa-barcode"></i> ${product.code}</div>` : '';
+
+                productCard.innerHTML = `
+                    <div class="product-image-container">
+                        <img src="${product.image}" alt="${product.name}" class="product-image" onerror="this.src='https://placehold.co/300x300/e2e8f0/2d3748?text=Image+Error'">
+                    </div>
+                    <div class="product-info">
+                        <div class="product-name">${product.name}</div>
+                        ${codeDisplay}
+                        <div class="product-price">$${parseFloat(product.price).toFixed(2)}</div>
+                    </div>
+                    <div class="product-actions">
+                        ${isAdmin ? `
+                            <button class="edit-btn" data-id="${product.id}"><i class="fas fa-edit"></i></button>
+                            <button class="delete-btn" data-id="${product.id}"><i class="fas fa-trash"></i></button>
+                        ` : ''}
+                    </div>
+                `;
+                
+                productsContainer.appendChild(productCard);
+            });
+            
+            if (isAdmin) {
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const productId = e.currentTarget.getAttribute('data-id');
+                        editProduct(productId);
+                    });
+                });
+                
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const productId = e.currentTarget.getAttribute('data-id');
+                        deleteProduct(productId);
+                    });
+                });
+            }
+        }
+
+        function editProduct(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            
+            editingProductId = productId;
+            document.getElementById('productCode').value = product.code || '';
+            document.getElementById('productName').value = product.name;
+            document.getElementById('productPrice').value = product.price;
+            document.getElementById('productCategory').value = product.category;
+            
+            // گۆڕانکاری بۆ دانانی لینکەکە لە خانەکە
+            document.getElementById('productImage').value = product.image || '';
+            imagePreview.innerHTML = `<img src="${product.image}" style="max-width: 100%; max-height: 150px;">`;
+            
+            formTitle.textContent = 'دەستکاری کردنی کاڵا';
+            productFormModal.style.display = 'block';
+        }
+
+        async function deleteProduct(productId) {
+            if (confirm('دڵنیایت دەتەوێت ئەم کاڵایە بسڕیتەوە؟')) {
+                try {
+                    await deleteDoc(doc(db, "products", productId));
+                    showNotification('کاڵا سڕدرایەوە', 'success');
+                } catch (error) {
+                    showNotification('هەڵە لە سڕینەوە', 'error');
+                }
+            }
+        }
+        
+        function startScanner() {
+            scannerModal.style.display = 'block';
+            if (!html5QrcodeScanner) {
+                html5QrcodeScanner = new Html5QrcodeScanner(
+                    "reader", { fps: 10, qrbox: { width: 250, height: 250 } }, false);
+            }
+            html5QrcodeScanner.render((decodedText) => {
+                searchInput.value = decodedText;
+                currentSearch = decodedText;
+                renderProducts();
+                stopScanner();
+                showNotification('کۆدەکە دۆزرایەوە', 'success');
+            }, (error) => {});
+        }
+
+        function stopScanner() {
+            if (html5QrcodeScanner) { html5QrcodeScanner.clear(); }
+            scannerModal.style.display = 'none';
+        }
+
+        function setupEventListeners() {
+            adminLoginBtn.addEventListener('click', () => { loginModal.style.display = 'block'; });
+            
+            logoutBtn.addEventListener('click', () => {
+                isAdmin = false;
+                logoutBtn.style.display = 'none';
+                adminLoginBtn.style.display = 'block';
+                adminControls.style.display = 'none';
+                renderCategories();
+                renderProducts();
+                showNotification('بە سەرکەوتوویی چوویتەدەرەوە', 'success');
+            });
+            
+            addProductBtn.addEventListener('click', () => {
+                editingProductId = null;
+                productForm.reset();
+                document.getElementById('productImage').value = '';
+                imagePreview.innerHTML = 'پێشبینی وێنە';
+                formTitle.textContent = 'زیادکردنی کاڵای نوێ';
+                productFormModal.style.display = 'block';
+            });
+
+            addCategoryBtn.addEventListener('click', () => {
+                categoryForm.reset();
+                categoryFormModal.style.display = 'block';
+            });
+            
+            document.getElementById('closeLogin').addEventListener('click', () => loginModal.style.display = 'none');
+            document.getElementById('closeForm').addEventListener('click', () => productFormModal.style.display = 'none');
+            document.getElementById('closeCategoryForm').addEventListener('click', () => categoryFormModal.style.display = 'none');
+            document.getElementById('closeScanner').addEventListener('click', stopScanner);
+            
+            window.addEventListener('click', (e) => {
+                if (e.target === loginModal) loginModal.style.display = 'none';
+                if (e.target === productFormModal) productFormModal.style.display = 'none';
+                if (e.target === categoryFormModal) categoryFormModal.style.display = 'none';
+                if (e.target === scannerModal) stopScanner();
+            });
+            
+            scanBtn.addEventListener('click', startScanner);
+            
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                
+                if (username === ADMIN_USER.username && password === ADMIN_USER.password) {
+                    isAdmin = true;
+                    loginModal.style.display = 'none';
+                    logoutBtn.style.display = 'block';
+                    adminLoginBtn.style.display = 'none';
+                    adminControls.style.display = 'flex';
+                    renderCategories();
+                    renderProducts();
+                    showNotification('بە سەرکەوتوویی چوویتەژوورەوە', 'success');
+                } else {
+                    showNotification('ناوی بەکارهێنەر یان وشەی نهێنی هەڵەە', 'error');
+                }
+            });
+
+            categoryForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const catName = document.getElementById('categoryName').value.trim();
+                if(catName) {
+                    try {
+                        await addDoc(categoriesCollection, { name: catName });
+                        showNotification('جۆری نوێ زیادکرا', 'success');
+                        categoryFormModal.style.display = 'none';
+                        categoryForm.reset();
+                    } catch (error) {
+                        showNotification('هەڵەیەک ڕوویدا', 'error');
+                    }
+                }
+            });
+            
+            productForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                // ڕاستەوخۆ لینکەکە وەردەگرێت لە خانەکەوە
+                const imageUrl = document.getElementById('productImage').value.trim();
+                
+                const productData = {
+                    code: document.getElementById('productCode').value,
+                    name: document.getElementById('productName').value,
+                    price: parseFloat(document.getElementById('productPrice').value),
+                    category: document.getElementById('productCategory').value,
+                    image: imageUrl || 'https://placehold.co/300x300/e2e8f0/2d3748?text=Product'
+                };
+                
+                try {
+                    if (editingProductId) {
+                        const productRef = doc(db, "products", editingProductId);
+                        await updateDoc(productRef, productData);
+                        showNotification('کاڵا سەرکەوتووانە نوێکرایەوە', 'success');
+                    } else {
+                        await addDoc(productsCollection, productData);
+                        showNotification('کاڵا سەرکەوتووانە زیادکرا', 'success');
+                    }
+                    productFormModal.style.display = 'none';
+                    editingProductId = null;
+                    productForm.reset();
+                    imagePreview.innerHTML = 'پێشبینی وێنە';
+                } catch (error) {
+                    showNotification('هەڵەیەک ڕوویدا', 'error');
+                }
+            });
+
+            // کاتێک لینکێک دادەنێت، ڕاستەوخۆ پێشبینی وێنەکە دروست دەکات
+            productImage.addEventListener('input', function() {
+                const url = this.value.trim();
+                if (url) {
+                    imagePreview.innerHTML = `<img src="${url}" style="max-width: 100%; max-height: 150px;" onerror="this.src='https://placehold.co/300x300/e2e8f0/2d3748?text=Invalid+Link'">`;
+                } else {
+                    imagePreview.innerHTML = 'پێشبینی وێنە';
+                }
+            });
+            
+            searchInput.addEventListener('input', () => {
+                currentSearch = searchInput.value;
+                renderProducts();
+            });
+        }
+
+        function init() {
+            onSnapshot(categoriesCollection, (snapshot) => {
+                categories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderCategories();
+            });
+
+            onSnapshot(productsCollection, (snapshot) => {
+                products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderProducts();
+            });
+            
+            setupEventListeners();
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
+```<FollowUp label="ماڵپەڕێک بۆ دروستکردنی لینکی وێنە" query="ئایا دەتوانیت ماڵپەڕێکم پێ بڵێیت کە وێنەکانی مۆبایلەکەم یان کۆمپیوتەرەکەمی تێدا بەرز بکەمەوە و لینکەکەی کۆپی بکەم بۆ ئەم وێبسایتە؟"/>
+
+<ElicitationsGroup message="پێویستت بە هیچ گۆڕانکارییەکی تر هەیە؟">
+  <Elicitation label="گۆڕینی لۆگۆ یان ناو" query="دەتوانم فێربم چۆن ناوی (فرۆشگای MATEN) لەسەرەوەی وێبسایتەکە بگۆڕم؟"/>
+  <Elicitation label="بەرزکردنەوەی وێبسایت بۆ ئینتەرنێت" query="وێبسایتەکە ئامادەیە، چۆن ئێستا لە ڕێگەی Github Pages یان Firebase Hosting بیخەمە سەر ئینتەرنێت؟"/>
+</ElicitationsGroup>
