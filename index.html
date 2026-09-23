@@ -70,7 +70,6 @@
         .product-code-display { font-size: 11px; color: var(--dark-gray); background: var(--light-gray); padding: 2px 5px; border-radius: 4px; display: inline-block; margin-bottom: 8px; }
         .product-price { color: var(--accent-light); font-weight: 700; font-size: 15px; }
         
-        /* دیزاینی بەشی قازانج */
         .profit-section { margin-top: 10px; background-color: #f0fff4; border: 1px dashed var(--accent-light); border-radius: 6px; padding: 8px; text-align: right; font-size: 12px; display: none; }
         .profit-section.show { display: block; }
         .profit-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
@@ -100,7 +99,6 @@
         .add-cat-btn { background-color: var(--primary-color); }
         .add-prod-btn { background-color: var(--accent-color); }
         
-        /* سکانەر */
         #reader { border: 2px dashed var(--accent-color) !important; border-radius: 12px; padding: 15px; background-color: #f8fafc; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); margin-top: 20px; width: 100%; min-height: 250px; }
         #reader a { display: none !important; }
         #reader__dashboard_section_swaplink { display: none !important; }
@@ -112,9 +110,20 @@
         #html5-qrcode-button-camera-start::after { content: "دەستپێکردنی کامێرا"; font-size: 15px; }
         #html5-qrcode-button-camera-stop::after { content: "وەستاندنی کامێرا"; font-size: 15px; }
         #reader__scan_region { border-radius: 8px; overflow: hidden; margin-top: 10px; }
+        
+        /* دیزاینی لۆدینگ (Loading) */
+        #globalLoader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: white; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; }
+        .spinner { width: 50px; height: 50px; border: 5px solid var(--light-gray); border-top: 5px solid var(--accent-color); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
+    <!-- بەشی لۆدینگ -->
+    <div id="globalLoader">
+        <div class="spinner"></div>
+        <div style="color: var(--primary-color); font-weight: bold; font-size: 16px;">داتایەکان لۆد دەبن...</div>
+    </div>
+
     <div class="app-container">
         <header class="app-header">
             <div class="logo">
@@ -208,7 +217,6 @@
                     </div>
                     <div class="form-group"><label for="productName">ناوی کاڵا:</label><input type="text" id="productName" required></div>
                     
-                    <!-- بەشی نوێ: نرخی کڕین (جوملە) -->
                     <div class="form-group">
                         <label for="productPurchasePrice" style="color: var(--primary-light);">نرخی کڕین - جوملە (دینار):</label>
                         <input type="number" id="productPurchasePrice" required min="0" placeholder="بۆ نموونە: 4000">
@@ -395,7 +403,6 @@
                     }
                 }
 
-                // دیاریکردنی قازانج تەنها بۆ ئەدمین
                 let profitHtml = '';
                 if (isAdmin && product.purchasePrice) {
                     const profit = parseFloat(product.price) - parseFloat(product.purchasePrice);
@@ -681,6 +688,13 @@
             onSnapshot(productsCollection, (snapshot) => {
                 products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderProducts();
+                
+                // لێرەدا لۆدینگەكە دەشارینەوە کاتێک داتاکان دەگەن
+                const loader = document.getElementById('globalLoader');
+                if(loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.style.display = 'none', 500);
+                }
             });
             
             setupEventListeners();
