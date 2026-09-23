@@ -92,7 +92,7 @@
         .add-cat-btn { background-color: var(--primary-color); }
         .add-prod-btn { background-color: var(--accent-color); }
         
-        /* جوانکردنی دیزاینی سکانەرەکە و شاردنەوەی بەشە زیادەکان */
+        /* سکانەر */
         #reader { border: 2px dashed var(--accent-color) !important; border-radius: 12px; padding: 15px; background-color: #f8fafc; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); margin-top: 20px; width: 100%; min-height: 250px; }
         #reader a { display: none !important; }
         #reader__dashboard_section_swaplink { display: none !important; }
@@ -203,6 +203,8 @@
                     <div class="form-group">
                         <label for="productPrice">نرخ (دینار):</label>
                         <input type="number" id="productPrice" required min="0">
+                        <!-- ئەم بەشە زیاد کرا بۆ پیشاندانی گۆڕانکاری نرخ -->
+                        <div id="priceChangeIndicator" style="margin-top: 8px; font-size: 13px; font-weight: bold;"></div>
                     </div>
                     
                     <div class="form-group">
@@ -249,6 +251,7 @@
         let categories = [];
         let isAdmin = false;
         let editingProductId = null;
+        let originalPrice = 0; // بەکاردێت بۆ هەڵگرتنی نرخی کۆن لە کاتی دەستکاریکردن
         let currentCategory = 'all';
         let currentSearch = '';
         let html5QrcodeScanner = null;
@@ -274,6 +277,7 @@
         const formTitle = document.getElementById('formTitle');
         const productImage = document.getElementById('productImage');
         const imagePreview = document.getElementById('imagePreview');
+        const priceChangeIndicator = document.getElementById('priceChangeIndicator'); // زیادکرا
 
         function showNotification(message, type = 'success') {
             const notification = document.createElement('div');
@@ -363,6 +367,22 @@
                 const codeDisplay = product.code ? `<div class="product-code-display"><i class="fas fa-barcode"></i> ${product.code}</div>` : '';
                 const formattedPrice = parseFloat(product.price).toLocaleString('en-US');
 
+                // دیاریکردنی شێوازی پیشاندانی نرخ ئەگەر گۆڕانکاری تێدا کرابێت
+                let priceDisplayHtml = `<div class="product-price">${formattedPrice} دینار</div>`;
+                if (product.oldPrice) {
+                    if (product.price < product.oldPrice) {
+                        priceDisplayHtml = `
+                            <div style="font-size: 11px; color: var(--dark-gray); text-decoration: line-through; margin-top: 4px;">${parseFloat(product.oldPrice).toLocaleString('en-US')}</div>
+                            <div class="product-price" style="color: var(--accent-light); margin-top: 0;">${formattedPrice} دینار <i class="fas fa-arrow-down" style="font-size: 12px;"></i></div>
+                        `;
+                    } else if (product.price > product.oldPrice) {
+                        priceDisplayHtml = `
+                            <div style="font-size: 11px; color: var(--dark-gray); text-decoration: line-through; margin-top: 4px;">${parseFloat(product.oldPrice).toLocaleString('en-US')}</div>
+                            <div class="product-price" style="color: var(--danger-color); margin-top: 0;">${formattedPrice} دینار <i class="fas fa-arrow-up" style="font-size: 12px;"></i></div>
+                        `;
+                    }
+                }
+
                 productCard.innerHTML = `
                     <div class="product-image-container">
                         <img src="${product.image}" alt="${product.name}" class="product-image" onerror="this.src='https://placehold.co/300x300/e2e8f0/2d3748?text=Image+Error'">
@@ -370,7 +390,7 @@
                     <div class="product-info">
                         <div class="product-name">${product.name}</div>
                         ${codeDisplay}
-                        <div class="product-price">${formattedPrice} دینار</div>
+                        ${priceDisplayHtml}
                     </div>
                     <div class="product-actions">
                         ${isAdmin ? `
@@ -405,6 +425,8 @@
             if (!product) return;
             
             editingProductId = productId;
+            originalPrice = parseFloat(product.price); // هەڵگرتنی نرخی ئەسڵی
+            
             document.getElementById('productCode').value = product.code || '';
             document.getElementById('productName').value = product.name;
             document.getElementById('productPrice').value = product.price;
@@ -412,6 +434,8 @@
             
             document.getElementById('productImage').value = product.image || '';
             imagePreview.innerHTML = `<img src="${product.image}" style="max-width: 100%; max-height: 150px;">`;
+            
+            priceChangeIndicator.innerHTML = `<span style="color: var(--dark-gray);"><i class="fas fa-info-circle"></i> نرخی ئێستا: ${originalPrice.toLocaleString('en-US')} دینار</span>`;
             
             formTitle.textContent = 'دەستکاری کردنی کاڵا';
             productFormModal.style.display = 'block';
@@ -462,7 +486,9 @@
             
             addProductBtn.addEventListener('click', () => {
                 editingProductId = null;
+                originalPrice = 0;
                 productForm.reset();
+                priceChangeIndicator.innerHTML = '';
                 document.getElementById('productImage').value = '';
                 imagePreview.innerHTML = 'پێشبینی وێنە';
                 formTitle.textContent = 'زیادکردنی کاڵای نوێ';
@@ -518,15 +544,37 @@
                 }
             });
             
+            // چاودێریکردنی گۆڕانکاری نرخ لەناو فۆڕمەکەدا
+            document.getElementById('productPrice').addEventListener('input', (e) => {
+                if (editingProductId) {
+                    const newPrice = parseFloat(e.target.value);
+                    if (isNaN(newPrice)) {
+                        priceChangeIndicator.innerHTML = `<span style="color: var(--dark-gray);"><i class="fas fa-info-circle"></i> نرخی پێشوو: ${originalPrice.toLocaleString('en-US')} دینار</span>`;
+                        return;
+                    }
+                    
+                    if (newPrice > originalPrice) {
+                        const diff = newPrice - originalPrice;
+                        priceChangeIndicator.innerHTML = `<span style="color: var(--danger-color);"><i class="fas fa-arrow-up"></i> بەرزبووەتەوە بە بڕی ${diff.toLocaleString('en-US')} دینار</span>`;
+                    } else if (newPrice < originalPrice) {
+                        const diff = originalPrice - newPrice;
+                        priceChangeIndicator.innerHTML = `<span style="color: var(--accent-light);"><i class="fas fa-arrow-down"></i> دابەزیوە بە بڕی ${diff.toLocaleString('en-US')} دینار</span>`;
+                    } else {
+                        priceChangeIndicator.innerHTML = `<span style="color: var(--dark-gray);"><i class="fas fa-equals"></i> نرخ وەک خۆیەتی</span>`;
+                    }
+                }
+            });
+
             productForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
                 const imageUrl = document.getElementById('productImage').value.trim();
+                const newPrice = parseFloat(document.getElementById('productPrice').value);
                 
                 const productData = {
                     code: document.getElementById('productCode').value,
                     name: document.getElementById('productName').value,
-                    price: parseFloat(document.getElementById('productPrice').value),
+                    price: newPrice,
                     category: document.getElementById('productCategory').value,
                     image: imageUrl || 'https://placehold.co/300x300/e2e8f0/2d3748?text=Product',
                     timestamp: Date.now()
@@ -534,6 +582,10 @@
                 
                 try {
                     if (editingProductId) {
+                        // ئەگەر نرخ گۆڕابێت، نرخی پێشوو پاشەکەوت دەکات
+                        if (newPrice !== originalPrice) {
+                            productData.oldPrice = originalPrice;
+                        }
                         const productRef = doc(db, "products", editingProductId);
                         await updateDoc(productRef, productData);
                         showNotification('کاڵا سەرکەوتووانە نوێکرایەوە', 'success');
@@ -543,7 +595,9 @@
                     }
                     productFormModal.style.display = 'none';
                     editingProductId = null;
+                    originalPrice = 0;
                     productForm.reset();
+                    priceChangeIndicator.innerHTML = '';
                     imagePreview.innerHTML = 'پێشبینی وێنە';
                 } catch (error) {
                     showNotification('هەڵەیەک ڕوویدا', 'error');
