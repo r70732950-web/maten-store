@@ -197,8 +197,8 @@
                     <div class="form-group"><label for="productName">ناوی کاڵا:</label><input type="text" id="productName" required></div>
                     
                     <div class="form-group">
-                        <label for="productPrice">نرخ ($):</label>
-                        <input type="number" id="productPrice" required min="0" step="0.01">
+                        <label for="productPrice">نرخ (دینار):</label>
+                        <input type="number" id="productPrice" required min="0">
                     </div>
                     
                     <div class="form-group">
@@ -209,7 +209,6 @@
                         </select>
                     </div>
                     
-                    <!-- گۆڕانکاری لێرە کرا: خانەیەک بۆ لینکی وێنە -->
                     <div class="form-group">
                         <label for="productImage">لینکی وێنەی کاڵا:</label>
                         <input type="url" id="productImage" required placeholder="لینکی وێنەکە لێرە دابنێ (http://...)">
@@ -357,6 +356,9 @@
                 productCard.className = 'product-card';
                 
                 const codeDisplay = product.code ? `<div class="product-code-display"><i class="fas fa-barcode"></i> ${product.code}</div>` : '';
+                
+                // گۆڕینی فۆرماتی نرخ بۆ دینار بە فاریزەوە (نموونە: 15,000 دینار)
+                const formattedPrice = parseFloat(product.price).toLocaleString('en-US');
 
                 productCard.innerHTML = `
                     <div class="product-image-container">
@@ -365,7 +367,7 @@
                     <div class="product-info">
                         <div class="product-name">${product.name}</div>
                         ${codeDisplay}
-                        <div class="product-price">$${parseFloat(product.price).toFixed(2)}</div>
+                        <div class="product-price">${formattedPrice} دینار</div>
                     </div>
                     <div class="product-actions">
                         ${isAdmin ? `
@@ -405,7 +407,6 @@
             document.getElementById('productPrice').value = product.price;
             document.getElementById('productCategory').value = product.category;
             
-            // گۆڕانکاری بۆ دانانی لینکەکە لە خانەکە
             document.getElementById('productImage').value = product.image || '';
             imagePreview.innerHTML = `<img src="${product.image}" style="max-width: 100%; max-height: 150px;">`;
             
@@ -522,7 +523,6 @@
             productForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
-                // ڕاستەوخۆ لینکەکە وەردەگرێت لە خانەکەوە
                 const imageUrl = document.getElementById('productImage').value.trim();
                 
                 const productData = {
@@ -551,7 +551,6 @@
                 }
             });
 
-            // کاتێک لینکێک دادەنێت، ڕاستەوخۆ پێشبینی وێنەکە دروست دەکات
             productImage.addEventListener('input', function() {
                 const url = this.value.trim();
                 if (url) {
@@ -585,9 +584,9 @@
     </script>
 </body>
 </html>
-```<FollowUp label="ماڵپەڕێک بۆ دروستکردنی لینکی وێنە" query="ئایا دەتوانیت ماڵپەڕێکم پێ بڵێیت کە وێنەکانی مۆبایلەکەم یان کۆمپیوتەرەکەمی تێدا بەرز بکەمەوە و لینکەکەی کۆپی بکەم بۆ ئەم وێبسایتە؟"/>
+```<FollowUp label="هەنگاوی داهاتوو چییە؟" query="ئایا هیچ شتێکی تر ماوە کە بتەوێت لەم کۆدەدا بیگۆڕم، یان دەتەوێت فێربیت چۆن بە تەواوی ئیشی پێبکەیت؟"/>
 
-<ElicitationsGroup message="پێویستت بە هیچ گۆڕانکارییەکی تر هەیە؟">
-  <Elicitation label="گۆڕینی لۆگۆ یان ناو" query="دەتوانم فێربم چۆن ناوی (فرۆشگای MATEN) لەسەرەوەی وێبسایتەکە بگۆڕم؟"/>
-  <Elicitation label="بەرزکردنەوەی وێبسایت بۆ ئینتەرنێت" query="وێبسایتەکە ئامادەیە، چۆن ئێستا لە ڕێگەی Github Pages یان Firebase Hosting بیخەمە سەر ئینتەرنێت؟"/>
+<ElicitationsGroup message="بژاردەی تر کە لەوانەیە پێویستت پێی بێت:">
+  <Elicitation label="گۆڕینی وشەی نهێنی" query="چۆن بتوانم ناوی بەکارهێنەر و وشەی نهێنی بگۆڕم بۆ ئەوەی کەسی تر نەتوانێت بێتە ژوورەوە؟"/>
+  <Elicitation label="ماڵپەڕ بۆ لینککردنی وێنە" query="دەتوانیت ماڵپەڕێکم پێ بڵێیت کە بە خۆڕایی وێنەکانی تێدا بەرز بکەمەوە بۆ ئەوەی لینکەکانیان بەکاربهێنم؟"/>
 </ElicitationsGroup>
