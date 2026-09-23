@@ -111,17 +111,11 @@
         #html5-qrcode-button-camera-stop::after { content: "وەستاندنی کامێرا"; font-size: 15px; }
         #reader__scan_region { border-radius: 8px; overflow: hidden; margin-top: 10px; }
         
-        /* دیزاینی قاڵبی لۆدینگ (Skeleton Loader) */
-        .skeleton {
-            background: linear-gradient(90deg, #e2e8f0 25%, #edf2f7 50%, #e2e8f0 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: 4px;
-        }
-        @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
+        .skeleton { background: linear-gradient(90deg, #e2e8f0 25%, #edf2f7 50%, #e2e8f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        
+        .spinner { width: 30px; height: 30px; border: 3px solid var(--light-gray); border-top: 3px solid var(--accent-color); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -175,13 +169,11 @@
             <div class="section">
                 <h3 class="section-title"><i class="fas fa-list"></i> جۆرەکان</h3>
                 <div class="categories" id="categoriesContainer" style="padding-bottom: 10px;">
-                    <!-- قاڵبەکان لێرە لۆد دەبن -->
                 </div>
             </div>
             <div class="section">
                 <h3 class="section-title"><i class="fas fa-box-open"></i> کاڵاکان</h3>
                 <div class="products-container" id="productsContainer">
-                    <!-- قاڵبەکان لێرە لۆد دەبن -->
                 </div>
             </div>
         </main>
@@ -279,6 +271,7 @@
         let currentCategory = 'all';
         let currentSearch = '';
         let html5QrcodeScanner = null;
+        let renderLimit = 15; // ڕێژەی سەرەتایی لۆدکردنی کاڵاکان
 
         const adminLoginBtn = document.getElementById('adminLoginBtn');
         const logoutBtn = document.getElementById('logoutBtn');
@@ -315,14 +308,12 @@
             }, 3000);
         }
 
-        // دانانی قاڵبی لۆدینگ پێش گەیشتنی داتاکان
         function renderSkeletonLoader() {
             categoriesContainer.innerHTML = `
                 <button class="category-btn skeleton" style="width: 70px; height: 32px; border: none;"></button>
                 <button class="category-btn skeleton" style="width: 90px; height: 32px; border: none;"></button>
                 <button class="category-btn skeleton" style="width: 60px; height: 32px; border: none;"></button>
             `;
-
             let skeletonCards = '';
             for(let i=0; i<6; i++) {
                 skeletonCards += `
@@ -351,7 +342,6 @@
                 } else {
                     btn.textContent = cat.name;
                 }
-                
                 categoriesContainer.appendChild(btn);
 
                 const option = document.createElement('option');
@@ -366,6 +356,7 @@
                     document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     currentCategory = btn.getAttribute('data-category');
+                    renderLimit = 15; // ڕیسێتکردنەوەی ژمارەی لۆدکردن
                     renderProducts();
                 });
             });
@@ -406,7 +397,10 @@
                 return;
             }
             
-            filteredProducts.forEach(product => {
+            // بڕینی کاڵاکان بەپێی ڕێژەی دیاریکراو (Lazy Loading)
+            const productsToRender = filteredProducts.slice(0, renderLimit);
+            
+            productsToRender.forEach(product => {
                 const productCard = document.createElement('div');
                 productCard.className = 'product-card';
                 
@@ -467,9 +461,29 @@
                         ` : ''}
                     </div>
                 `;
-                
                 productsContainer.appendChild(productCard);
             });
+            
+            // ئەگەر کاڵای زیاتر مابوو نیشانی بدەین، ئۆبزێرڤەر دادەنێین بۆ هێنانە خوارەوە (Infinite Scroll)
+            if (renderLimit < filteredProducts.length) {
+                const sentinel = document.createElement('div');
+                sentinel.style.gridColumn = '1 / -1';
+                sentinel.style.textAlign = 'center';
+                sentinel.style.padding = '20px 0';
+                sentinel.innerHTML = '<div class="spinner" style="margin: 0 auto;"></div>';
+                productsContainer.appendChild(sentinel);
+                
+                const observer = new IntersectionObserver((entries) => {
+                    if(entries[0].isIntersecting) {
+                        observer.disconnect();
+                        setTimeout(() => {
+                            renderLimit += 15;
+                            renderProducts();
+                        }, 400); // 400ms بۆ جوانی جووڵەکە
+                    }
+                });
+                observer.observe(sentinel);
+            }
             
             if (isAdmin) {
                 document.querySelectorAll('.edit-btn').forEach(btn => {
@@ -530,6 +544,7 @@
             html5QrcodeScanner.render((decodedText) => {
                 searchInput.value = decodedText;
                 currentSearch = decodedText;
+                renderLimit = 15; // ڕیسێتکردنەوە
                 renderProducts();
                 stopScanner();
                 showNotification('کۆدەکە دۆزرایەوە', 'success');
@@ -684,12 +699,12 @@
             
             searchInput.addEventListener('input', () => {
                 currentSearch = searchInput.value;
+                renderLimit = 15; // ڕیسێتکردنەوە
                 renderProducts();
             });
         }
 
         function init() {
-            // یەکسەر قاڵبەکان نیشان دەدات پێش هاتنی داتاکان
             renderSkeletonLoader();
 
             onAuthStateChanged(auth, (user) => {
