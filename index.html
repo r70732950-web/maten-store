@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kind Market - نرخی کاڵاکان</title>
     <meta http-equiv="Content-Language" content="ku">
+    
+    <!-- PWA Meta Tags & Links -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a365d">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
@@ -62,7 +68,6 @@
         .category-btn { background-color: var(--light-gray); border: none; padding: 6px 12px; border-radius: 18px; white-space: nowrap; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 4px; border: 1px solid var(--section-border); transition: all 0.2s; }
         .category-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); font-weight: bold; }
         
-        /* شێوازی تایبەت بۆ دوگمەی گۆڕانکاری نرخ */
         .category-btn.special-filter { background-color: #fffaeb; color: var(--warning-color); border-color: #f6e05e; }
         .category-btn.special-filter.active { background-color: var(--warning-color); color: white; border-color: var(--warning-color); }
         
@@ -268,6 +273,17 @@
         </div>
     </div>
     
+    <!-- PWA Service Worker Script -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker Registered!'))
+                    .catch(err => console.error('Service Worker Error', err));
+            });
+        }
+    </script>
+
     <script type="module"> 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
