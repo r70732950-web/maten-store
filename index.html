@@ -131,6 +131,18 @@
         .add-cat-btn { background-color: var(--primary-color); }
         .add-prod-btn { background-color: var(--accent-color); }
         
+        /* CSS نوێ بۆ دوگمە و ئامارەکان */
+        .stats-btn { background-color: #805ad5; }
+        .stat-box { background: white; padding: 15px; border-radius: 8px; border: 1px solid var(--section-border); text-align: center; }
+        .stat-title { color: var(--text-light); font-size: 14px; margin-bottom: 5px; }
+        .stat-value { font-size: 20px; font-weight: bold; }
+        .val-purchase { color: var(--primary-light); }
+        .val-selling { color: var(--text-color); }
+        .val-profit { color: var(--accent-light); }
+        .val-percentage { font-size: 24px; color: #d69e2e; }
+        .stat-highlight { background-color: #fffaeb; border-color: #f6e05e; }
+        .stat-success { background-color: #f0fff4; border-color: var(--accent-light); }
+        
         #reader { border: 2px dashed var(--accent-color) !important; border-radius: 12px; padding: 15px; background-color: #f8fafc; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); margin-top: 20px; width: 100%; min-height: 250px; }
         #reader a { display: none !important; }
         #reader__dashboard_section_swaplink { display: none !important; }
@@ -189,6 +201,19 @@
                 </form>
             </div>
         </div>
+        
+        <!-- پەنجەرەی ئامارەکان -->
+        <div id="statsModal" class="modal">
+            <div class="modal-content">
+                <span class="close" id="closeStats">&times;</span>
+                <h2 style="text-align: center; margin-bottom: 18px; color: var(--primary-color);">
+                    <i class="fas fa-chart-line"></i> پوختەی قازانج
+                </h2>
+                <div id="statsContent" style="display: flex; flex-direction: column; gap: 10px;">
+                    <!-- داتاکان لێرە نیشان دەدرێن بە جاڤاسکریپت -->
+                </div>
+            </div>
+        </div>
 
         <main class="main-content">
              <div class="search-container">
@@ -216,6 +241,10 @@
             </div>
             <div class="action-fab add-prod-btn" id="addProductBtn" title="زیادکردنی کاڵا">
                 <i class="fas fa-plus"></i>
+            </div>
+            <!-- دوگمەی نوێی ئامارەکان -->
+            <div class="action-fab stats-btn" id="statsBtn" title="ئامار و قازانج">
+                <i class="fas fa-chart-pie"></i>
             </div>
         </div>
 
@@ -330,6 +359,12 @@
         const productCategorySelect = document.getElementById('productCategory');
         const searchInput = document.getElementById('searchInput');
         const scanBtn = document.getElementById('scanBtn');
+        
+        // گۆڕاوە نوێیەکان بۆ ئامارەکان
+        const statsBtn = document.getElementById('statsBtn');
+        const statsModal = document.getElementById('statsModal');
+        const closeStats = document.getElementById('closeStats');
+        const statsContent = document.getElementById('statsContent');
         
         const loginForm = document.getElementById('loginForm');
         const productForm = document.getElementById('productForm');
@@ -642,11 +677,15 @@
             document.getElementById('closeCategoryForm').addEventListener('click', () => categoryFormModal.style.display = 'none');
             document.getElementById('closeScanner').addEventListener('click', stopScanner);
             
+            // داخستنی پەنجەرەی ئامارەکان
+            closeStats.addEventListener('click', () => statsModal.style.display = 'none');
+            
             window.addEventListener('click', (e) => {
                 if (e.target === loginModal) loginModal.style.display = 'none';
                 if (e.target === productFormModal) productFormModal.style.display = 'none';
                 if (e.target === categoryFormModal) categoryFormModal.style.display = 'none';
                 if (e.target === scannerModal) stopScanner();
+                if (e.target === statsModal) statsModal.style.display = 'none';
             });
             
             scanBtn.addEventListener('click', startScanner);
@@ -754,6 +793,52 @@
                 currentSearch = searchInput.value;
                 renderLimit = 15; 
                 renderProducts();
+            });
+
+            // لۆجیکی دوگمەی ئامارەکان (Stats Button Logic)
+            statsBtn.addEventListener('click', () => {
+                let totalPurchase = 0;
+                let totalSelling = 0;
+
+                // کۆکردنەوەی نرخی کڕین و فرۆشتنی سەرجەم ئەو کاڵایانەی لە مارکێتەکەدان
+                products.forEach(p => {
+                    if (p.purchasePrice && p.price) {
+                        totalPurchase += parseFloat(p.purchasePrice);
+                        totalSelling += parseFloat(p.price);
+                    }
+                });
+
+                const totalProfit = totalSelling - totalPurchase;
+                let profitPercentage = 0;
+                let profitPer100k = 0;
+
+                if (totalPurchase > 0) {
+                    profitPercentage = (totalProfit / totalPurchase) * 100;
+                    profitPer100k = (profitPercentage / 100) * 100000;
+                }
+
+                statsContent.innerHTML = `
+                    <div class="stat-box">
+                        <div class="stat-title">سەرمایەی وەگەڕخراو (کۆی نرخی کڕین)</div>
+                        <div class="stat-value val-purchase">${totalPurchase.toLocaleString('en-US')} دينار</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-title">کۆی داهات ئەگەر هەمووی بفرۆشرێت</div>
+                        <div class="stat-value val-selling">${totalSelling.toLocaleString('en-US')} دينار</div>
+                    </div>
+                    <div class="stat-box stat-success">
+                        <div class="stat-title">کۆی پوختەی قازانج</div>
+                        <div class="stat-value val-profit">${totalProfit.toLocaleString('en-US')} دينار</div>
+                    </div>
+                    <div class="stat-box stat-highlight">
+                        <div class="stat-title">ڕێژەی قازانج</div>
+                        <div class="stat-value val-percentage">%${profitPercentage.toFixed(2)}</div>
+                        <div style="font-size: 13px; color: var(--dark-gray); margin-top: 8px; line-height: 1.5;">
+                            <i class="fas fa-info-circle"></i> واتە بۆ هەر ١٠٠,٠٠٠ دینارێک سەرمایە، بڕی <b>${Math.round(profitPer100k).toLocaleString('en-US')} دینار</b> قازانج دەکەیت.
+                        </div>
+                    </div>
+                `;
+                statsModal.style.display = 'block';
             });
         }
 
