@@ -63,8 +63,22 @@
         .products-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
         .product-card { background-color: white; border-radius: 8px; overflow: hidden; position: relative; border: 1px solid var(--section-border); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; }
         .product-card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1); }
-        .product-image-container { width: 100%; aspect-ratio: 1/1; position: relative; background-color: var(--light-gray); }
-        .product-image { width: 100%; height: 100%; object-fit: contain; padding: 10px; }
+        
+        /* گۆڕانکارییەکانی وێنە لێرە کراون */
+        .product-image-container { 
+            width: 100%; 
+            aspect-ratio: 3/4; 
+            position: relative; 
+            background-color: var(--light-gray);
+            overflow: hidden; 
+            border-bottom: 1px solid var(--section-border);
+        }
+        .product-image { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+        }
+        
         .product-info { padding: 12px 8px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
         .product-name { font-weight: bold; font-size: 14px; margin-bottom: 5px; }
         .product-code-display { font-size: 11px; color: var(--dark-gray); background: var(--light-gray); padding: 2px 5px; border-radius: 4px; display: inline-block; margin-bottom: 8px; }
@@ -76,9 +90,9 @@
         .profit-amount { font-weight: bold; color: var(--accent-color); }
         .loss-amount { font-weight: bold; color: var(--danger-color); }
         
-        .product-actions { position: absolute; top: 5px; left: 5px; display: none; gap: 5px; flex-direction: column; }
+        .product-actions { position: absolute; top: 5px; left: 5px; display: none; gap: 5px; flex-direction: column; z-index: 10; }
         .product-card:hover .product-actions { display: flex; }
-        .edit-btn, .delete-btn { width: 28px; height: 28px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; font-size: 13px; color: white; cursor: pointer; }
+        .edit-btn, .delete-btn { width: 28px; height: 28px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; font-size: 13px; color: white; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         .edit-btn { background-color: var(--accent-color); }
         .delete-btn { background-color: var(--danger-color); }
         
@@ -271,7 +285,7 @@
         let currentCategory = 'all';
         let currentSearch = '';
         let html5QrcodeScanner = null;
-        let renderLimit = 15; // ڕێژەی سەرەتایی لۆدکردنی کاڵاکان
+        let renderLimit = 15; 
 
         const adminLoginBtn = document.getElementById('adminLoginBtn');
         const logoutBtn = document.getElementById('logoutBtn');
@@ -356,7 +370,7 @@
                     document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     currentCategory = btn.getAttribute('data-category');
-                    renderLimit = 15; // ڕیسێتکردنەوەی ژمارەی لۆدکردن
+                    renderLimit = 15; 
                     renderProducts();
                 });
             });
@@ -397,7 +411,6 @@
                 return;
             }
             
-            // بڕینی کاڵاکان بەپێی ڕێژەی دیاریکراو (Lazy Loading)
             const productsToRender = filteredProducts.slice(0, renderLimit);
             
             productsToRender.forEach(product => {
@@ -464,7 +477,6 @@
                 productsContainer.appendChild(productCard);
             });
             
-            // ئەگەر کاڵای زیاتر مابوو نیشانی بدەین، ئۆبزێرڤەر دادەنێین بۆ هێنانە خوارەوە (Infinite Scroll)
             if (renderLimit < filteredProducts.length) {
                 const sentinel = document.createElement('div');
                 sentinel.style.gridColumn = '1 / -1';
@@ -479,7 +491,7 @@
                         setTimeout(() => {
                             renderLimit += 15;
                             renderProducts();
-                        }, 400); // 400ms بۆ جوانی جووڵەکە
+                        }, 400); 
                     }
                 });
                 observer.observe(sentinel);
@@ -544,7 +556,7 @@
             html5QrcodeScanner.render((decodedText) => {
                 searchInput.value = decodedText;
                 currentSearch = decodedText;
-                renderLimit = 15; // ڕیسێتکردنەوە
+                renderLimit = 15;
                 renderProducts();
                 stopScanner();
                 showNotification('کۆدەکە دۆزرایەوە', 'success');
@@ -699,7 +711,7 @@
             
             searchInput.addEventListener('input', () => {
                 currentSearch = searchInput.value;
-                renderLimit = 15; // ڕیسێتکردنەوە
+                renderLimit = 15; 
                 renderProducts();
             });
         }
