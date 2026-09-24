@@ -35,6 +35,7 @@
             --dark-gray: #718096;
             --section-bg: #ffffff;
             --section-border: #cbd5e0;
+            --warning-color: #d69e2e;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'NRT', sans-serif; }
         body { background-color: var(--light-gray); color: var(--text-color); direction: rtl; transition: background-color 0.3s; }
@@ -50,8 +51,13 @@
         
         .categories { display: flex; overflow-x: auto; padding: 8px 0; gap: 8px; scrollbar-width: none; }
         .categories::-webkit-scrollbar { display: none; }
-        .category-btn { background-color: var(--light-gray); border: none; padding: 6px 12px; border-radius: 18px; white-space: nowrap; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 4px; border: 1px solid var(--section-border); }
+        .category-btn { background-color: var(--light-gray); border: none; padding: 6px 12px; border-radius: 18px; white-space: nowrap; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 4px; border: 1px solid var(--section-border); transition: all 0.2s; }
         .category-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); font-weight: bold; }
+        
+        /* شێوازی تایبەت بۆ دوگمەی گۆڕانکاری نرخ */
+        .category-btn.special-filter { background-color: #fffaeb; color: var(--warning-color); border-color: #f6e05e; }
+        .category-btn.special-filter.active { background-color: var(--warning-color); color: white; border-color: var(--warning-color); }
+        
         .delete-cat { margin-right: 8px; color: var(--danger-color); cursor: pointer; padding: 2px; }
         
         .search-container { margin: 12px; display: flex; gap: 8px; }
@@ -64,7 +70,6 @@
         .product-card { background-color: white; border-radius: 8px; overflow: hidden; position: relative; border: 1px solid var(--section-border); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; }
         .product-card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1); }
         
-        /* گۆڕانکارییەکانی وێنە لێرە کراون */
         .product-image-container { 
             width: 100%; 
             aspect-ratio: 3/4; 
@@ -343,7 +348,10 @@
         }
 
         function renderCategories() {
-            categoriesContainer.innerHTML = `<button class="category-btn ${currentCategory === 'all' ? 'active' : ''}" data-category="all"><i class="fas fa-th"></i> هەمی</button>`;
+            categoriesContainer.innerHTML = `
+                <button class="category-btn ${currentCategory === 'all' ? 'active' : ''}" data-category="all"><i class="fas fa-th"></i> هەمی</button>
+                <button class="category-btn special-filter ${currentCategory === 'changed_price' ? 'active' : ''}" data-category="changed_price"><i class="fas fa-tags"></i> گۆڕانکاری نرخ</button>
+            `;
             productCategorySelect.innerHTML = `<option value="" disabled selected>-- جۆرێک هەڵبژێرە --</option>`;
 
             categories.forEach(cat => {
@@ -397,7 +405,17 @@
             productsContainer.innerHTML = '';
             
             const filteredProducts = products.filter(product => {
-                const matchesCategory = currentCategory === 'all' || product.category === currentCategory;
+                let matchesCategory = false;
+                
+                if (currentCategory === 'all') {
+                    matchesCategory = true;
+                } else if (currentCategory === 'changed_price') {
+                    // تەنها ئەو کاڵایانە پیشان دەدات کە نرخیان گۆڕاوە
+                    matchesCategory = (product.oldPrice !== undefined && product.oldPrice !== product.price);
+                } else {
+                    matchesCategory = product.category === currentCategory;
+                }
+
                 const searchLower = currentSearch.toLowerCase();
                 const matchesSearch = product.name.toLowerCase().includes(searchLower) || 
                                       (product.code && product.code.toLowerCase().includes(searchLower));
@@ -421,7 +439,7 @@
                 const formattedPrice = parseFloat(product.price).toLocaleString('en-US');
 
                 let priceDisplayHtml = `<div class="product-price">${formattedPrice} دینار</div>`;
-                if (product.oldPrice) {
+                if (product.oldPrice && product.oldPrice !== product.price) {
                     if (product.price < product.oldPrice) {
                         priceDisplayHtml = `
                             <div style="font-size: 11px; color: var(--dark-gray); text-decoration: line-through; margin-top: 4px;">${parseFloat(product.oldPrice).toLocaleString('en-US')}</div>
