@@ -130,7 +130,6 @@
         .add-cat-btn { background-color: var(--primary-color); }
         .add-prod-btn { background-color: var(--accent-color); }
         
-        /* CSS نوێ بۆ دوگمە و ئامارەکان */
         .stats-btn { background-color: #805ad5; }
         .stat-box { background: white; padding: 15px; border-radius: 8px; border: 1px solid var(--section-border); text-align: center; }
         .stat-title { color: var(--text-light); font-size: 14px; margin-bottom: 5px; }
@@ -142,17 +141,9 @@
         .stat-highlight { background-color: #fffaeb; border-color: #f6e05e; }
         .stat-success { background-color: #f0fff4; border-color: var(--accent-light); }
         
-        #reader { border: 2px dashed var(--accent-color) !important; border-radius: 12px; padding: 15px; background-color: #f8fafc; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); margin-top: 20px; width: 100%; min-height: 250px; }
-        #reader a { display: none !important; }
-        #reader__dashboard_section_swaplink { display: none !important; }
-        #reader__dashboard_section_csr span { display: none !important; }
-        #reader select { padding: 10px !important; border-radius: 8px !important; border: 1px solid var(--section-border) !important; font-family: 'NRT', sans-serif !important; margin-bottom: 15px !important; width: 100%; background-color: white; }
-        #reader button { background-color: var(--primary-color) !important; color: white !important; border: none !important; padding: 12px 24px !important; border-radius: 8px !important; font-family: 'NRT', sans-serif !important; font-weight: bold !important; font-size: 0 !important; margin: 5px auto !important; cursor: pointer !important; display: block !important; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.3s ease; }
-        #reader button:hover { background-color: var(--accent-color) !important; transform: translateY(-2px); }
-        #html5-qrcode-button-camera-permission::after { content: "ڕێگەپێدان بە کامێرا"; font-size: 15px; }
-        #html5-qrcode-button-camera-start::after { content: "دەستپێکردنی کامێرا"; font-size: 15px; }
-        #html5-qrcode-button-camera-stop::after { content: "وەستاندنی کامێرا"; font-size: 15px; }
-        #reader__scan_region { border-radius: 8px; overflow: hidden; margin-top: 10px; }
+        /* گۆڕانکاریێن CSS بۆ دیزاینا کامێرایێ */
+        #reader { border: 2px dashed var(--accent-color); border-radius: 12px; padding: 15px; background-color: #f8fafc; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); margin-top: 20px; width: 100%; min-height: 250px; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        #reader video { width: 100% !important; border-radius: 8px !important; object-fit: cover; }
         
         .skeleton { background: linear-gradient(90deg, #e2e8f0 25%, #edf2f7 50%, #e2e8f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; }
         @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
@@ -208,7 +199,7 @@
                     <i class="fas fa-chart-line"></i> پوختەی قازانج
                 </h2>
                 <div id="statsContent" style="display: flex; flex-direction: column; gap: 10px;">
-                    </div>
+                </div>
             </div>
         </div>
 
@@ -337,7 +328,11 @@
         let originalPrice = 0; 
         let currentCategory = 'all';
         let currentSearch = '';
-        let html5QrcodeScanner = null;
+        
+        // گۆڕاوێن نوێ بۆ کامێرایێ
+        let html5QrCode = null;
+        let isScanning = false;
+        
         let renderLimit = 15; 
 
         const adminLoginBtn = document.getElementById('adminLoginBtn');
@@ -355,7 +350,6 @@
         const searchInput = document.getElementById('searchInput');
         const scanBtn = document.getElementById('scanBtn');
         
-        // گۆڕاوە نوێیەکان بۆ ئامارەکان
         const statsBtn = document.getElementById('statsBtn');
         const statsModal = document.getElementById('statsModal');
         const closeStats = document.getElementById('closeStats');
@@ -618,30 +612,53 @@
             }
         }
         
-        // گۆڕانکارییەکە لێرە کرایە 👇
+        // بەشێ نوێ بۆ ڤەکرنا ڕاستەوخۆ یا کامێرایێ (بێی دیزاینا کەڤن)
         function startScanner() {
             scannerModal.style.display = 'block';
-            if (!html5QrcodeScanner) {
-                html5QrcodeScanner = new Html5QrcodeScanner(
-                    "reader", { 
-                        fps: 10, 
-                        qrbox: { width: 250, height: 250 },
-                        supportedScanTypes: [0] // ئەڤە دێ نەچار کەت تەنها کامێرا بکار بهێت
-                    }, false);
+            
+            if (!html5QrCode) {
+                html5QrCode = new Html5Qrcode("reader");
             }
-            html5QrcodeScanner.render((decodedText) => {
-                searchInput.value = decodedText;
-                currentSearch = decodedText;
-                renderLimit = 15;
-                renderProducts();
-                stopScanner();
-                showNotification('کۆدەکە دۆزرایەوە', 'success');
-            }, (error) => {});
+            
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                { 
+                    fps: 10, 
+                    qrbox: { width: 250, height: 250 } 
+                },
+                (decodedText) => {
+                    searchInput.value = decodedText;
+                    currentSearch = decodedText;
+                    renderLimit = 15;
+                    renderProducts();
+                    stopScanner();
+                    showNotification('کۆدەکە دۆزرایەوە', 'success');
+                },
+                (errorMessage) => {
+                    // Ignore background errors
+                }
+            ).then(() => {
+                isScanning = true;
+            }).catch((err) => {
+                console.error("هەڵە ل ڤەکرنا کامێرایێ:", err);
+                alert("نەشیا کامێرایێ ڤەکەت! تکایە ڕێگە بدە ب کامێرایێ (Allow Camera).");
+                scannerModal.style.display = 'none';
+            });
         }
 
         function stopScanner() {
-            if (html5QrcodeScanner) { html5QrcodeScanner.clear(); }
-            scannerModal.style.display = 'none';
+            if (html5QrCode && isScanning) {
+                html5QrCode.stop().then(() => {
+                    html5QrCode.clear();
+                    isScanning = false;
+                    scannerModal.style.display = 'none';
+                }).catch((err) => {
+                    isScanning = false;
+                    scannerModal.style.display = 'none';
+                });
+            } else {
+                scannerModal.style.display = 'none';
+            }
         }
 
         function setupEventListeners() {
@@ -677,7 +694,6 @@
             document.getElementById('closeCategoryForm').addEventListener('click', () => categoryFormModal.style.display = 'none');
             document.getElementById('closeScanner').addEventListener('click', stopScanner);
             
-            // داخستنی پەنجەرەی ئامارەکان
             closeStats.addEventListener('click', () => statsModal.style.display = 'none');
             
             window.addEventListener('click', (e) => {
@@ -795,12 +811,10 @@
                 renderProducts();
             });
 
-            // لۆجیکی دوگمەی ئامارەکان (Stats Button Logic)
             statsBtn.addEventListener('click', () => {
                 let totalPurchase = 0;
                 let totalSelling = 0;
 
-                // کۆکردنەوەی نرخی کڕین و فرۆشتنی سەرجەم ئەو کاڵایانەی لە مارکێتەکەدان
                 products.forEach(p => {
                     if (p.purchasePrice && p.price) {
                         totalPurchase += parseFloat(p.purchasePrice);
