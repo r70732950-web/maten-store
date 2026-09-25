@@ -2,7 +2,7 @@
 <html lang="ku" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kind Market - نرخی کاڵاکان</title>
     <meta http-equiv="Content-Language" content="ku">
     
@@ -43,6 +43,10 @@
             --warning-color: #d69e2e;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'NRT', sans-serif; }
+        
+        /* ڕێگریکردن لە delay ی دەستلێدان لە مۆبایل */
+        button, input, select { touch-action: manipulation; }
+        
         body { background-color: var(--light-gray); color: var(--text-color); direction: rtl; transition: background-color 0.3s; }
         .app-container { max-width: 100%; margin: 0 auto; background-color: white; min-height: 100vh; position: relative; }
         .app-header { background-color: white; color: var(--primary-color); padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); border-bottom: 2px solid var(--accent-color); }
@@ -69,6 +73,10 @@
         
         .category-btn.special-filter { background-color: #fffaeb; color: var(--warning-color); border-color: #f6e05e; }
         .category-btn.special-filter.active { background-color: var(--warning-color); color: white; border-color: var(--warning-color); }
+        
+        /* دیزاینی تایبەت بۆ دوگمەی بێ بارکۆد */
+        .category-btn.no-barcode-filter { background-color: #ffe4e6; color: #e11d48; border-color: #fda4af; }
+        .category-btn.no-barcode-filter.active { background-color: #e11d48; color: white; border-color: #e11d48; }
         
         .delete-cat { margin-right: 8px; color: var(--danger-color); cursor: pointer; padding: 2px; }
         
@@ -141,7 +149,6 @@
         .stat-highlight { background-color: #fffaeb; border-color: #f6e05e; }
         .stat-success { background-color: #f0fff4; border-color: var(--accent-light); }
         
-        /* گۆڕانکاریێن CSS بۆ دیزاینا کامێرایێ */
         #reader { border: 2px dashed var(--accent-color); border-radius: 12px; padding: 15px; background-color: #f8fafc; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); margin-top: 20px; width: 100%; min-height: 250px; overflow: hidden; display: flex; justify-content: center; align-items: center; }
         #reader video { width: 100% !important; border-radius: 8px !important; object-fit: cover; }
         
@@ -256,7 +263,7 @@
                 <form id="productForm">
                     <div class="form-group">
                         <label for="productCode">کۆدی کاڵا (بارکۆد):</label>
-                        <input type="text" id="productCode" required placeholder="بۆ نموونە: 123456789">
+                        <input type="text" id="productCode" placeholder="ئەگەر بارکۆدی نییە با بەتاڵی بمێنێتەوە...">
                     </div>
                     <div class="form-group"><label for="productName">ناوی کاڵا:</label><input type="text" id="productName" required></div>
                     
@@ -329,7 +336,6 @@
         let currentCategory = 'all';
         let currentSearch = '';
         
-        // گۆڕاوێن نوێ بۆ کامێرایێ
         let html5QrCode = null;
         let isScanning = false;
         
@@ -399,6 +405,7 @@
             categoriesContainer.innerHTML = `
                 <button class="category-btn ${currentCategory === 'all' ? 'active' : ''}" data-category="all"><i class="fas fa-th"></i> هەمی</button>
                 <button class="category-btn special-filter ${currentCategory === 'changed_price' ? 'active' : ''}" data-category="changed_price"><i class="fas fa-tags"></i> گۆڕانکاری نرخ</button>
+                <button class="category-btn no-barcode-filter ${currentCategory === 'no_barcode' ? 'active' : ''}" data-category="no_barcode"><i class="fas fa-barcode"></i> بێ بارکۆد</button>
             `;
             productCategorySelect.innerHTML = `<option value="" disabled selected>-- جۆرێک هەڵبژێرە --</option>`;
 
@@ -455,10 +462,13 @@
             const filteredProducts = products.filter(product => {
                 let matchesCategory = false;
                 
+                // گۆڕانکاری لە لۆجیکی فلتەرکردن
                 if (currentCategory === 'all') {
                     matchesCategory = true;
                 } else if (currentCategory === 'changed_price') {
                     matchesCategory = (product.oldPrice !== undefined && product.oldPrice !== product.price);
+                } else if (currentCategory === 'no_barcode') {
+                    matchesCategory = (!product.code || product.code.trim() === '');
                 } else {
                     matchesCategory = product.category === currentCategory;
                 }
@@ -482,7 +492,11 @@
                 const productCard = document.createElement('div');
                 productCard.className = 'product-card';
                 
-                const codeDisplay = product.code ? `<div class="product-code-display"><i class="fas fa-barcode"></i> ${product.code}</div>` : '';
+                // ئەگەر بارکۆدی نەبوو، با شتێکی جوانتر نیشان بدات
+                const codeDisplay = product.code && product.code.trim() !== '' 
+                    ? `<div class="product-code-display"><i class="fas fa-barcode"></i> ${product.code}</div>` 
+                    : `<div class="product-code-display" style="background-color: #ffe4e6; color: #e11d48;"><i class="fas fa-ban"></i> بێ بارکۆد</div>`;
+                
                 const formattedPrice = parseFloat(product.price).toLocaleString('en-US');
 
                 let priceDisplayHtml = `<div class="product-price">${formattedPrice} دینار</div>`;
@@ -612,7 +626,6 @@
             }
         }
         
-        // بەشێ نوێ بۆ ڤەکرنا ڕاستەوخۆ یا کامێرایێ (بێی دیزاینا کەڤن)
         function startScanner() {
             scannerModal.style.display = 'block';
             
